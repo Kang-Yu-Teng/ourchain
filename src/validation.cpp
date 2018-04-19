@@ -2602,7 +2602,6 @@ static CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     // Construct new block index object
     CBlockIndex* pindexNew = new CBlockIndex(block);
     assert(pindexNew);
-    pindexNew->nArrivalTime = GetTime();
     // We assign the sequence id to blocks only when the full data is available,
     // to avoid miners withholding blocks but broadcasting headers, to get a
     // competitive advantage.
@@ -2616,6 +2615,12 @@ static CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
         pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
         pindexNew->BuildSkip();
     }
+
+    // Get current timestamp. See UpdateTime().
+    pindexNew->nArrivalTime = GetAdjustedTime();
+    if (pindexNew->pprev != nullptr)
+        pindexNew->nArrivalTime = std::max((int64_t)pindexNew->nArrivalTime, pindexNew->pprev->GetMedianTimePast()+1);
+
     pindexNew->nTimeMax = (pindexNew->pprev ? std::max(pindexNew->pprev->nTimeMax, pindexNew->nTime) : pindexNew->nTime);
     pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
     pindexNew->RaiseValidity(BLOCK_VALID_TREE);
