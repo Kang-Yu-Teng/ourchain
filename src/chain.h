@@ -280,9 +280,9 @@ public:
         return ret;
     }
 
-    uint32_t GetArrivalTime() const
+    int64_t GetArrivalTime() const
     {
-        return nArrivalTime;
+        return (int64_t)nArrivalTime;
     }
 
     CBlockHeader GetBlockHeader() const

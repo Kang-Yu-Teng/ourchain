@@ -2619,7 +2619,7 @@ static CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     // Get current timestamp. See UpdateTime().
     pindexNew->nArrivalTime = GetAdjustedTime();
     if (pindexNew->pprev != nullptr)
-        pindexNew->nArrivalTime = std::max((int64_t)pindexNew->nArrivalTime, pindexNew->pprev->GetMedianTimePast()+1);
+        pindexNew->nArrivalTime = std::max(pindexNew->GetArrivalTime(), pindexNew->pprev->GetMedianTimePast()+1);
 
     pindexNew->nTimeMax = (pindexNew->pprev ? std::max(pindexNew->pprev->nTimeMax, pindexNew->nTime) : pindexNew->nTime);
     pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
