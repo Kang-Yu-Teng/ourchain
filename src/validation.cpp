@@ -100,7 +100,6 @@ namespace {
     /** Ourcoin finality implementation. */
     int64_t round_start_time = 0;
     uint256 round_parent;
-    const int ROUND_INTERVAL = 12;
 
     bool IsBroadcastDelayedBlock(const CBlockIndex *pindex) {
         // Block finish time and arrival time differ too much!
@@ -3223,7 +3222,6 @@ static bool AcceptBlock(const std::shared_ptr<const CBlock>& pblock, CValidation
 bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock)
 {
     CBlockIndex *pindex = nullptr;
-    bool fExpired = IsRoundExpired();
 
     {
         if (fNewBlock) *fNewBlock = false;
@@ -3247,22 +3245,35 @@ bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<cons
 
     NotifyHeaderTip();
 
-    {
+    if (IsInitialBlockDownload() == true) {
         CValidationState state;
-        if (IsBroadcastDelayedBlock(pindex) == true ||
-            (fExpired == false && IsCurrentRoundBlock(pindex) == false) ||
-            (fExpired == true && IsNextRoundBlock(pindex) == false))
-            InvalidateBlock(state, Params(), pindex);
-    }
-
-    {
-        CValidationState state; // Only used to report errors, not invalidity - ignore it
         if (!ActivateBestChain(state, chainparams, pblock))
             return error("%s: ActivateBestChain failed", __func__);
-    }
 
-    if (fExpired == true && pindex->GetBlockHash() == chainActive.Tip()->GetBlockHash())
-        UpdateRound(pindex);
+        if (pindex->GetBlockHash() == chainActive.Tip()->GetBlockHash())
+            UpdateRound(pindex);
+    } else if (IsRoundExpired() == false) {
+        if (IsBroadcastDelayedBlock(pindex) == true || IsCurrentRoundBlock(pindex) == false) {
+            CValidationState state;
+            InvalidateBlock(state, Params(), pindex);
+        }
+
+        CValidationState state;
+        if (!ActivateBestChain(state, chainparams, pblock))
+            return error("%s: ActivateBestChain failed", __func__);
+    } else { // IsRoundExpired() == true
+        if (IsBroadcastDelayedBlock(pindex) == true || IsNextRoundBlock(pindex) == false) {
+            CValidationState state;
+            InvalidateBlock(state, Params(), pindex);
+        }
+
+        CValidationState state;
+        if (!ActivateBestChain(state, chainparams, pblock))
+            return error("%s: ActivateBestChain failed", __func__);
+
+        if (pindex->GetBlockHash() == chainActive.Tip()->GetBlockHash())
+            UpdateRound(pindex);
+    }
 
     return true;
 }
