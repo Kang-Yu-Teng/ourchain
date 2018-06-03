@@ -1,6 +1,12 @@
 *.tar.gz
+<<<<<<< HEAD
 
 *.exe
+=======
+*~
+*.exe
+build/
+>>>>>>> epow rewad adjustment ver.1
 src/bitcoin
 src/bitcoind
 src/bitcoin-cli
