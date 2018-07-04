@@ -102,71 +102,21 @@ const std::string strMessageMagic = "Bitcoin Signed Message:\n";
 // Internal stuff
 namespace {
 
-    /** Ourcoin finality implementation. */
-    int64_t round_start_time = 0;
-    uint256 round_parent;
-
-    bool IsBroadcastDelayedBlock(const CBlockIndex *pindex) {
-        // Block finish time and arrival time differ too much!
-        int64_t diff = pindex->GetBlockTime() - pindex->GetArrivalTime();
-        if (diff > ROUND_INTERVAL || diff < -ROUND_INTERVAL) return true;
-        return false;
-    }
-
-    bool IsRoundExpired() {
-        if (GetAdjustedTime() >= round_start_time + ROUND_INTERVAL) return true;
-        return false;
-    }
-
-    bool IsCurrentRoundBlock(const CBlockIndex *pindex) {
-        if (pindex->GetBlockTime() >= round_start_time &&
-            pindex->GetBlockTime() < round_start_time + ROUND_INTERVAL &&
-            pindex->pprev != nullptr &&
-            pindex->pprev->GetBlockHash() == round_parent) return true;
-        return false;
-    }
-
-    bool IsNextRoundBlock(const CBlockIndex *pindex) {
-        if (pindex->GetBlockTime() >= round_start_time + ROUND_INTERVAL &&
-            pindex->pprev != nullptr &&
-            pindex->pprev->GetBlockHash() == chainActive.Tip()->GetBlockHash()) return true;
-        return false;
-    }
-
-    void UpdateRound(const CBlockIndex *pindex) {
-        round_start_time = pindex->GetBlockTime();
-        round_parent = pindex->pprev->GetBlockHash();
-    }
-
-    bool AbsoluteTimeComparator(const CBlockIndex *pa, const CBlockIndex *pb) {
-        // First sort by earliest time mined (needs finish_time implemented), ...
-        if (pa->GetBlockTime() < pb->GetBlockTime()) return false;
-        if (pa->GetBlockTime() > pb->GetBlockTime()) return true;
-
-        // ... then by most total EPoW (needs EPoW implemented), ...
-        if (pa->nChainWork > pb->nChainWork) return false;
-        if (pa->nChainWork < pb->nChainWork) return true;
-
-        // Use pointer address as tie breaker (should only happen with blocks
-        // loaded from disk, as those all have id 0).
-        if (pa < pb) return false;
-        if (pa > pb) return true;
-
-        // Identical blocks.
-        return false;
-    }
-
     struct CBlockIndexWorkComparator
     {
         bool operator()(const CBlockIndex *pa, const CBlockIndex *pb) const {
-            // The two blocks are in the same round.
-            if (pa->pprev != nullptr && pb->pprev != nullptr &&
-                pa->pprev->GetBlockHash() == pb->pprev->GetBlockHash())
-                return AbsoluteTimeComparator(pa, pb);
-
-            // Latest round first.
+            // First sort by most total work, ...
             if (pa->nChainWork > pb->nChainWork) return false;
             if (pa->nChainWork < pb->nChainWork) return true;
+
+            // ... then by earliest time received, ...
+            if (pa->nSequenceId < pb->nSequenceId) return false;
+            if (pa->nSequenceId > pb->nSequenceId) return true;
+
+            // Use pointer address as tie breaker (should only happen with blocks
+            // loaded from disk, as those all have id 0).
+            if (pa < pb) return false;
+            if (pa > pb) return true;
 
             // Identical blocks.
             return false;
@@ -2670,12 +2620,6 @@ static CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
         pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
         pindexNew->BuildSkip();
     }
-
-    // Get current timestamp. See UpdateTime().
-    pindexNew->nArrivalTime = GetAdjustedTime();
-    if (pindexNew->pprev != nullptr)
-        pindexNew->nArrivalTime = std::max(pindexNew->GetArrivalTime(), pindexNew->pprev->GetMedianTimePast()+1);
-
     pindexNew->nTimeMax = (pindexNew->pprev ? std::max(pindexNew->pprev->nTimeMax, pindexNew->nTime) : pindexNew->nTime);
     pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
     pindexNew->RaiseValidity(BLOCK_VALID_TREE);
@@ -3241,9 +3185,8 @@ static bool AcceptBlock(const std::shared_ptr<const CBlock>& pblock, CValidation
 
 bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock)
 {
-    CBlockIndex *pindex = nullptr;
-
     {
+        CBlockIndex *pindex = nullptr;
         if (fNewBlock) *fNewBlock = false;
         CValidationState state;
         // Ensure that CheckBlock() passes before calling AcceptBlock, as
@@ -3265,35 +3208,9 @@ bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<cons
 
     NotifyHeaderTip();
 
-    if (IsInitialBlockDownload() == true) {
-        CValidationState state;
-        if (!ActivateBestChain(state, chainparams, pblock))
-            return error("%s: ActivateBestChain failed", __func__);
-
-        if (pindex->GetBlockHash() == chainActive.Tip()->GetBlockHash())
-            UpdateRound(pindex);
-    } else if (IsRoundExpired() == false) {
-        if (IsBroadcastDelayedBlock(pindex) == true || IsCurrentRoundBlock(pindex) == false) {
-            CValidationState state;
-            InvalidateBlock(state, Params(), pindex);
-        }
-
-        CValidationState state;
-        if (!ActivateBestChain(state, chainparams, pblock))
-            return error("%s: ActivateBestChain failed", __func__);
-    } else { // IsRoundExpired() == true
-        if (IsBroadcastDelayedBlock(pindex) == true || IsNextRoundBlock(pindex) == false) {
-            CValidationState state;
-            InvalidateBlock(state, Params(), pindex);
-        }
-
-        CValidationState state;
-        if (!ActivateBestChain(state, chainparams, pblock))
-            return error("%s: ActivateBestChain failed", __func__);
-
-        if (pindex->GetBlockHash() == chainActive.Tip()->GetBlockHash())
-            UpdateRound(pindex);
-    }
+    CValidationState state; // Only used to report errors, not invalidity - ignore it
+    if (!ActivateBestChain(state, chainparams, pblock))
+        return error("%s: ActivateBestChain failed", __func__);
 
     return true;
 }
