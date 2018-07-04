@@ -337,6 +337,12 @@ public:
         return (int64_t)nTime;
     }
 
+    int64_t GetBlockFinishTime() const
+    {
+        return (int64_t)nTimeNonce;
+    }
+//b04902091
+
     int64_t GetBlockTimeMax() const
     {
         return (int64_t)nTimeMax;

@@ -108,7 +108,7 @@ namespace {
 
     bool IsBroadcastDelayedBlock(const CBlockIndex *pindex) {
         // Block finish time and arrival time differ too much!
-        int64_t diff = pindex->GetBlockTime() - pindex->GetArrivalTime();
+        int64_t diff = pindex->GetBlockFinishTime() - pindex->GetArrivalTime();
         if (diff > ROUND_INTERVAL || diff < -ROUND_INTERVAL) return true;
         return false;
     }
@@ -119,15 +119,15 @@ namespace {
     }
 
     bool IsCurrentRoundBlock(const CBlockIndex *pindex) {
-        if (pindex->GetBlockTime() >= round_start_time &&
-            pindex->GetBlockTime() < round_start_time + ROUND_INTERVAL &&
+        if (pindex->GetBlockFinishTime() >= round_start_time &&
+            pindex->GetBlockFinishTime() < round_start_time + ROUND_INTERVAL &&
             pindex->pprev != nullptr &&
             pindex->pprev->GetBlockHash() == round_parent) return true;
         return false;
     }
 
     bool IsNextRoundBlock(const CBlockIndex *pindex) {
-        if (pindex->GetBlockTime() >= round_start_time + ROUND_INTERVAL &&
+        if (pindex->GetBlockFinishTime() >= round_start_time + ROUND_INTERVAL &&
             pindex->pprev != nullptr &&
             pindex->pprev->GetBlockHash() == chainActive.Tip()->GetBlockHash()) return true;
         return false;
@@ -140,12 +140,15 @@ namespace {
 
     bool AbsoluteTimeComparator(const CBlockIndex *pa, const CBlockIndex *pb) {
         // First sort by earliest time mined (needs finish_time implemented), ...
-        if (pa->GetBlockTime() < pb->GetBlockTime()) return false;
-        if (pa->GetBlockTime() > pb->GetBlockTime()) return true;
+        if (pa->GetBlockFinishTime() < pb->GetBlockFinishTime()) return false;
+        if (pa->GetBlockFinishTime() > pb->GetBlockFinishTime()) return true;
 
         // ... then by most total EPoW (needs EPoW implemented), ...
-        if (pa->nChainWork > pb->nChainWork) return false;
-        if (pa->nChainWork < pb->nChainWork) return true;
+	CBlockHeader* ba, bb;
+	ba = &(pa->GetBlockHeader());
+        bb = &(pb->GetBlockHeader());
+        if (UintToArith256(GetEPow(ba->GetHash2(), ba->GetHash())) > UintToArith256(GetEPow(bb->GetHash2(), bb->GetHash()))) return false;
+        if (UintToArith256(GetEPow(ba->GetHash2(), ba->GetHash())) > UintToArith256(GetEPow(bb->GetHash2(), bb->GetHash()))) return true;
 
         // Use pointer address as tie breaker (should only happen with blocks
         // loaded from disk, as those all have id 0).
