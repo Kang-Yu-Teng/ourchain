@@ -144,11 +144,11 @@ namespace {
         if (pa->GetBlockFinishTime() > pb->GetBlockFinishTime()) return true;
 
         // ... then by most total EPoW (needs EPoW implemented), ...
-	CBlockHeader* ba, bb;
-	ba = &(pa->GetBlockHeader());
-        bb = &(pb->GetBlockHeader());
-        if (UintToArith256(GetEPow(ba->GetHash2(), ba->GetHash())) > UintToArith256(GetEPow(bb->GetHash2(), bb->GetHash()))) return false;
-        if (UintToArith256(GetEPow(ba->GetHash2(), ba->GetHash())) > UintToArith256(GetEPow(bb->GetHash2(), bb->GetHash()))) return true;
+	CBlockHeader ba, bb;
+	ba = pa->GetBlockHeader();
+        bb = pb->GetBlockHeader();
+        if (UintToArith256(GetEPow(ba.GetHash2(), ba.GetHash())) > UintToArith256(GetEPow(bb.GetHash2(), bb.GetHash()))) return false;
+        if (UintToArith256(GetEPow(ba.GetHash2(), ba.GetHash())) > UintToArith256(GetEPow(bb.GetHash2(), bb.GetHash()))) return true;
 
         // Use pointer address as tie breaker (should only happen with blocks
         // loaded from disk, as those all have id 0).
@@ -1540,7 +1540,7 @@ static DisconnectResult DisconnectBlock(const CBlock& block, const CBlockIndex* 
         }
 
         // restore inputs
-        if (i > 0) { // not coinbases
+        if (i > 1) { // not coinbases
             CTxUndo &txundo = blockUndo.vtxundo[i-1];
             if (txundo.vprevout.size() != tx.vin.size()) {
                 error("DisconnectBlock(): transaction and undo data inconsistent");
@@ -3543,9 +3543,8 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
 
 bool static LoadBlockIndexDB(const CChainParams& chainparams)
 {
-    if (!pblocktree->LoadBlockIndexGuts(chainparams.GetConsensus(), InsertBlockIndex))
+    if (!pblocktree->LoadBlockIndexGuts(chainparams.GetConsensus(), InsertBlockIndex))///
         return false;
-
     boost::this_thread::interruption_point();
 
     // Calculate nChainWork

@@ -123,16 +123,16 @@ bool CheckEPow(uint256 hash2,uint256 hash,uint32_t time){
 	min.SetHex("1");
 	epow=GetEPow(hash2,hash);
 	if(UintToArith256(epow)>UintToArith256(max)||UintToArith256(epow)<UintToArith256(min)){
-LogPrintf("my epow %s too big or samll,max %s min %s\n",epow.GetHex(),max.GetHex(),min.GetHex());
+//LogPrintf("my epow %s too big or samll,max %s min %s\n",epow.GetHex(),max.GetHex(),min.GetHex());
 		return false;
 	}
 	maxpersecond.SetHex("100000000");
 	minpersecond.SetHex("1");
 	epowpersecond=GetEPowPerSecond(epow,time);
 	if(UintToArith256(epowpersecond)>UintToArith256(max)||UintToArith256(epowpersecond)<UintToArith256(min)){
-LogPrintf("my epowpersecond %s too big or samll,max %s min %s\n",epowpersecond.GetHex(),maxpersecond.GetHex(),minpersecond.GetHex());
+//LogPrintf("my epowpersecond %s too big or samll,max %s min %s\n",epowpersecond.GetHex(),maxpersecond.GetHex(),minpersecond.GetHex());
 		return false;
 	}
-LogPrintf("my epow %s ,myepowpersecond %s,my time %d\n",epow.GetHex(),epowpersecond.GetHex(),time);
+//LogPrintf("my epow %s ,myepowpersecond %s,my time %d\n",epow.GetHex(),epowpersecond.GetHex(),time);
 	return true;
 }

@@ -134,9 +134,9 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
     while (nHeight < nHeightEnd)
     {
 	CBlockIndex* pindexPrev = chainActive.Tip();
-        LogPrintf("Before Create New Block\n");
+        //LogPrintf("Before Create New Block\n");
         std::unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(Params()).CreateNewBlock(coinbaseScript->reserveScript));
-        LogPrintf("After Create New Block\n");
+        //LogPrintf("After Create New Block\n");
         if (!pblocktemplate.get())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
         CBlock *pblock = &pblocktemplate->block;
@@ -163,7 +163,7 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
 	    pblock->nTimeNonce2 = pblock->nTimeNonce;
 	    pblock->maxhash = newhash;
 	}
-LogPrintf("%llu my hash %s,(real)%s\nmaxhash = %s,(real)%s\n",nTotalTries-nMaxTries,newhash.GetHex(),pblock->GetHash().GetHex(),pblock->maxhash.GetHex(), pblock->GetHash2().GetHex());
+//LogPrintf("%llu my hash %s,(real)%s\nmaxhash = %s,(real)%s\n",nTotalTries-nMaxTries,newhash.GetHex(),pblock->GetHash().GetHex(),pblock->maxhash.GetHex(), pblock->GetHash2().GetHex());
         while (nMaxTries > 0 && pblock->nNonce < nInnerLoopCount && (newhash != pblock->GetHash() || !CheckProofOfWork(newhash, pblock->nBits, Params().GetConsensus()))) {
 	    pblock->nTimeNonce = GetAdjustedTime();
 	    UpdateTimeNonce(pblock , pindexPrev);
@@ -178,12 +178,12 @@ LogPrintf("%llu my hash %s,(real)%s\nmaxhash = %s,(real)%s\n",nTotalTries-nMaxTr
 		    pblock->nTimeNonce2 = pblock->nTimeNonce;
 		    pblock->maxhash = newhash;
 		}
-LogPrintf("%llu my hash %s,(real)%s\nmaxhash = %s,(real)%s\n",nTotalTries-nMaxTries,newhash.GetHex(),pblock->GetHash().GetHex(),pblock->maxhash.GetHex(), pblock->GetHash2().GetHex());
+//LogPrintf("%llu my hash %s,(real)%s\nmaxhash = %s,(real)%s\n",nTotalTries-nMaxTries,newhash.GetHex(),pblock->GetHash().GetHex(),pblock->maxhash.GetHex(), pblock->GetHash2().GetHex());
 	    }
         }
-LogPrintf("generate success\nnonce =  %u\nnTime= %u\nnTimeNonce= %u\nmaxhash = %s,%s\nnNonce2 = %u\nnTimeNonce2 = %u\nmaxhash2 = %s\nhashMerkleRoot2 = %s\nhashMerkleRoot = %s\nhash = %s\n\n",
+/*LogPrintf("generate success\nnonce =  %u\nnTime= %u\nnTimeNonce= %u\nmaxhash = %s,%s\nnNonce2 = %u\nnTimeNonce2 = %u\nmaxhash2 = %s\nhashMerkleRoot2 = %s\nhashMerkleRoot = %s\nhash = %s\n\n",
 				pblock->nNonce, pblock->nTime, pblock->nTimeNonce, pblock->maxhash.ToString().c_str(), pblock->GetHash2().ToString().c_str(), pblock->nNonce2, pblock->nTimeNonce2,
-				pblock->maxhash2.ToString().c_str(),pblock->hashMerkleRoot2.ToString().c_str(),pblock->hashMerkleRoot.ToString().c_str(),pblock->GetHash().ToString().c_str());
+				pblock->maxhash2.ToString().c_str(),pblock->hashMerkleRoot2.ToString().c_str(),pblock->hashMerkleRoot.ToString().c_str(),pblock->GetHash().ToString().c_str());*/
 //b04902091
         if (nMaxTries == 0) {
             break;
