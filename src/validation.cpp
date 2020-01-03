@@ -104,25 +104,33 @@ namespace {
 
     /** Ourcoin finality implementation. */
     int64_t round_start_time = 0;
+    int64_t preround_finish_time = 0;
     uint256 round_parent;
 
     bool IsBroadcastDelayedBlock(const CBlockIndex *pindex) {
         // Block finish time and arrival time differ too much!
         int64_t diff = pindex->GetBlockFinishTime() - pindex->GetArrivalTime();
-        if (diff > ROUND_INTERVAL || diff < -ROUND_INTERVAL) return true;
+        if (diff >= ROUND_INTERVAL || diff <= -ROUND_INTERVAL){
+            LogPrintf("%s is DelayedBlock, arrival=%u, finish=%u, diff=%lld\n",pindex->GetBlockHash().ToString().c_str(),pindex->nArrivalTime,pindex->nTimeNonce,diff);
+            return true;
+        }
         return false;
     }
 
     bool IsRoundExpired() {
-        if (GetAdjustedTime() >= round_start_time + ROUND_INTERVAL) return true;
+        int64_t now_time = GetAdjustedTime();
+        LogPrintf("now %lld, round_start_time %lld\n",now_time,round_start_time);
+        //if (GetAdjustedTime() >= round_start_time + ROUND_INTERVAL) return true;
+        if (now_time >= round_start_time + ROUND_INTERVAL) return true;
         return false;
     }
 
     bool IsCurrentRoundBlock(const CBlockIndex *pindex) {
-        if (pindex->GetBlockFinishTime() >= round_start_time &&
+        if (pindex->GetBlockFinishTime() >= preround_finish_time &&
             pindex->GetBlockFinishTime() < round_start_time + ROUND_INTERVAL &&
             pindex->pprev != nullptr &&
             pindex->pprev->GetBlockHash() == round_parent) return true;
+        LogPrintf("No CurrentRoundBlock %s finish time %lld round start time %lld, parent %s, round_parent %s\n",pindex->GetBlockHash().ToString(),pindex->GetBlockFinishTime(),round_start_time,pindex->pprev->GetBlockHash().ToString(),round_parent.ToString());
         return false;
     }
 
@@ -130,12 +138,16 @@ namespace {
         if (pindex->GetBlockFinishTime() >= round_start_time + ROUND_INTERVAL &&
             pindex->pprev != nullptr &&
             pindex->pprev->GetBlockHash() == chainActive.Tip()->GetBlockHash()) return true;
+        LogPrintf("No NextRoundBlock %s finish time %lld round start time %lld, parent %s\n",pindex->GetBlockHash().ToString(),pindex->GetBlockFinishTime(),round_start_time,pindex->pprev->GetBlockHash().ToString());
         return false;
     }
 
     void UpdateRound(const CBlockIndex *pindex) {
-        round_start_time = pindex->GetBlockTime();
+        if(pindex->pprev->GetBlockFinishTime() > round_start_time + ROUND_INTERVAL) preround_finish_time = pindex->pprev->GetBlockFinishTime();
+        else preround_finish_time = round_start_time + ROUND_INTERVAL;
+        round_start_time = pindex->GetBlockFinishTime();
         round_parent = pindex->pprev->GetBlockHash();
+        LogPrintf("UpdateRound: preround finish time %lld, round start time %lld, round_parent %s\n",preround_finish_time,round_start_time,round_parent.ToString());
     }
 
     bool AbsoluteTimeComparator(const CBlockIndex *pa, const CBlockIndex *pb) {
@@ -144,11 +156,14 @@ namespace {
         if (pa->GetBlockFinishTime() > pb->GetBlockFinishTime()) return true;
 
         // ... then by most total EPoW (needs EPoW implemented), ...
-	CBlockHeader ba, bb;
-	ba = pa->GetBlockHeader();
+        CBlockHeader ba, bb;
+        ba = pa->GetBlockHeader();
         bb = pb->GetBlockHeader();
-        if (UintToArith256(GetEPow(ba.GetHash2(), ba.GetHash())) > UintToArith256(GetEPow(bb.GetHash2(), bb.GetHash()))) return false;
-        if (UintToArith256(GetEPow(ba.GetHash2(), ba.GetHash())) > UintToArith256(GetEPow(bb.GetHash2(), bb.GetHash()))) return true;
+        if (CompareEPow(ba, bb) > 0) return false;
+        if (CompareEPow(ba, bb) < 0) return true;
+        //if (UintToArith256(ba.GetHash()) > UintToArith256(bb.GetHash()))
+        //if (UintToArith256(ba.GetHash()) < UintToArith256(bb.GetHash()))
+        if(UintToArith256(ba.GetHash()) != UintToArith256(bb.GetHash())) LogPrintf("draw,pa>pb? %d, a=%s, b=%s\n",(pa > pb),ba.GetHash().ToString(),bb.GetHash().ToString());
 
         // Use pointer address as tie breaker (should only happen with blocks
         // loaded from disk, as those all have id 0).
@@ -2660,6 +2675,11 @@ static CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     // Construct new block index object
     CBlockIndex* pindexNew = new CBlockIndex(block);
     assert(pindexNew);
+    // Get current timestamp. See UpdateTime().
+    pindexNew->nArrivalTime = GetAdjustedTime();
+    if (pindexNew->pprev != nullptr)
+        pindexNew->nArrivalTime = std::max(pindexNew->GetArrivalTime(), pindexNew->pprev->GetMedianTimePast()+1);
+
     // We assign the sequence id to blocks only when the full data is available,
     // to avoid miners withholding blocks but broadcasting headers, to get a
     // competitive advantage.
@@ -2674,11 +2694,6 @@ static CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
         pindexNew->BuildSkip();
     }
 
-    // Get current timestamp. See UpdateTime().
-    pindexNew->nArrivalTime = GetAdjustedTime();
-    if (pindexNew->pprev != nullptr)
-        pindexNew->nArrivalTime = std::max(pindexNew->GetArrivalTime(), pindexNew->pprev->GetMedianTimePast()+1);
-
     pindexNew->nTimeMax = (pindexNew->pprev ? std::max(pindexNew->pprev->nTimeMax, pindexNew->nTime) : pindexNew->nTime);
     pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
     pindexNew->RaiseValidity(BLOCK_VALID_TREE);
@@ -2686,6 +2701,7 @@ static CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
         pindexBestHeader = pindexNew;
 
     setDirtyBlockIndex.insert(pindexNew);
+    LogPrintf("AddToBlockIndex : %s is arrive, arrival=%u, finish=%u\n",pindexNew->GetBlockHash().ToString(),pindexNew->nArrivalTime,pindexNew->nTimeNonce);
 
     return pindexNew;
 }
@@ -2831,22 +2847,19 @@ static bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state,
 {
 //b04902091
 if(fCheckPOW){
-    if(!((block.nTimeNonce>=block.nTimeNonce2)&&(block.nTimeNonce2>=block.nTime))){
-	LogPrintf("StartTime %d MaxHashTime %d EndTime %d isn't ordered\n",block.nTime,block.nTimeNonce2,block.nTimeNonce);
-        return false;
-    }
-    if(block.GetHash2() != block.maxhash){
-	LogPrintf("illegal MaxHash %s, Real MaxHash %s\n",block.maxhash.GetHex(),block.GetHash2().GetHex());
-	return false;
-    }
-    if(!CheckEPow(block.GetHash2(), block.GetHash(), block.nTimeNonce-block.nTime)){
-	if(block.GetHash() != consensusParams.hashGenesisBlock){
-	    return false;
-	}
-    }
     // Check proof of work matches claimed amount
     if (!CheckProofOfWork(block.GetHash(), block.nBits, consensusParams))
         return state.DoS(50, false, REJECT_INVALID, "high-hash", false, "proof of work failed");
+
+    if(!((block.nTimeNonce>=block.nTimeNonce2)&&(block.nTimeNonce2>=block.nTime))){
+        LogPrintf("StartTime %d MaxHashTime %d EndTime %d isn't ordered\n",block.nTime,block.nTimeNonce2,block.nTimeNonce);
+        return false;
+    }
+    if(!CheckEPow(block)){
+        if(block.GetHash() != consensusParams.hashGenesisBlock){
+            return false;
+        }
+    }
 }
 //b04902091
     return true;
@@ -3266,38 +3279,42 @@ bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<cons
         }
     }
 
-    NotifyHeaderTip();
+        NotifyHeaderTip();
+    {
 
-    if (IsInitialBlockDownload() == true) {
-        CValidationState state;
-        if (!ActivateBestChain(state, chainparams, pblock))
-            return error("%s: ActivateBestChain failed", __func__);
+        LOCK(cs_main);
 
-        if (pindex->GetBlockHash() == chainActive.Tip()->GetBlockHash())
-            UpdateRound(pindex);
-    } else if (IsRoundExpired() == false) {
-        if (IsBroadcastDelayedBlock(pindex) == true || IsCurrentRoundBlock(pindex) == false) {
+        if (IsInitialBlockDownload() == true) {
             CValidationState state;
-            InvalidateBlock(state, Params(), pindex);
+            if (!ActivateBestChain(state, chainparams, pblock))
+                return error("%s: ActivateBestChain failed", __func__);
+
+            if (pindex->GetBlockHash() == chainActive.Tip()->GetBlockHash())
+                UpdateRound(pindex);
+        } else if (IsRoundExpired() == false) {
+            if (IsBroadcastDelayedBlock(pindex) == true || IsCurrentRoundBlock(pindex) == false) {
+                CValidationState state;
+                InvalidateBlock(state, Params(), pindex);
+            }
+
+            CValidationState state;
+            if (!ActivateBestChain(state, chainparams, pblock))
+                return error("%s: ActivateBestChain failed", __func__);
+        } else { // IsRoundExpired() == true
+            if (IsBroadcastDelayedBlock(pindex) == true || IsNextRoundBlock(pindex) == false) {
+                CValidationState state;
+                InvalidateBlock(state, Params(), pindex);
+            }
+
+            CValidationState state;
+            if (!ActivateBestChain(state, chainparams, pblock))
+                return error("%s: ActivateBestChain failed", __func__);
+
+            if (pindex->GetBlockHash() == chainActive.Tip()->GetBlockHash())
+                UpdateRound(pindex);
         }
 
-        CValidationState state;
-        if (!ActivateBestChain(state, chainparams, pblock))
-            return error("%s: ActivateBestChain failed", __func__);
-    } else { // IsRoundExpired() == true
-        if (IsBroadcastDelayedBlock(pindex) == true || IsNextRoundBlock(pindex) == false) {
-            CValidationState state;
-            InvalidateBlock(state, Params(), pindex);
-        }
-
-        CValidationState state;
-        if (!ActivateBestChain(state, chainparams, pblock))
-            return error("%s: ActivateBestChain failed", __func__);
-
-        if (pindex->GetBlockHash() == chainActive.Tip()->GetBlockHash())
-            UpdateRound(pindex);
     }
-
     return true;
 }
 
@@ -3927,6 +3944,7 @@ bool RewindBlockIndex(const CChainParams& params)
                 }
             }
         } else if (pindexIter->IsValid(BLOCK_VALID_TRANSACTIONS) && pindexIter->nChainTx) {
+            LogPrintf("insert block %s\n",pindexIter->GetBlockHash().ToString());
             setBlockIndexCandidates.insert(pindexIter);
         }
     }
@@ -4249,6 +4267,9 @@ void static CheckBlockIndex(const Consensus::Params& consensusParams)
                 // In this case it must be in mapBlocksUnlinked -- see test below.
             }
         } else { // If this block sorts worse than the current tip or some ancestor's block has never been seen, it cannot be in setBlockIndexCandidates.
+            if(setBlockIndexCandidates.count(pindex) != 0){
+                LogPrintf("pindex=%s, its arrival=%u, its finish=%u, pindex->pprev=%s, its arrival=%u, its finish=%u\n",pindex->GetBlockHash().ToString().c_str(),pindex->nArrivalTime,pindex->nTimeNonce,pindex->pprev->GetBlockHash().ToString().c_str(),pindex->pprev->nArrivalTime,pindex->pprev->nTimeNonce);
+            }
             assert(setBlockIndexCandidates.count(pindex) == 0);
         }
         // Check whether this block is in mapBlocksUnlinked.

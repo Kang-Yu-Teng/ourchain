@@ -123,8 +123,8 @@ static const int64_t BLOCK_DOWNLOAD_TIMEOUT_BASE = 1000000;
 static const int64_t BLOCK_DOWNLOAD_TIMEOUT_PER_PEER = 500000;
 
 /** Ourcoin finality implementation. */
-static const int ROUND_INTERVAL = 12;
-static const int64_t DEFAULT_MAX_TIP_AGE = ROUND_INTERVAL / 2;
+static const int ROUND_INTERVAL = 2;
+static const int64_t DEFAULT_MAX_TIP_AGE = ROUND_INTERVAL * 2;
 /** Maximum age of our tip in seconds for us to be considered current for fee estimation */
 static const int64_t MAX_FEE_ESTIMATION_TIP_AGE = 3 * 60 * 60;
 

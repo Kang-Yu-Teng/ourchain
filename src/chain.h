@@ -207,7 +207,7 @@ public:
     //! Verification status of this block. See enum BlockStatus
     unsigned int nStatus;
 
-    //! The time at which this block is received from the network
+    //! (memory only)The time at which this block is received from the network
     uint32_t nArrivalTime;
 
     //! block header
@@ -441,7 +441,6 @@ public:
             READWRITE(VARINT(nDataPos));
         if (nStatus & BLOCK_HAVE_UNDO)
             READWRITE(VARINT(nUndoPos));
-        READWRITE(nArrivalTime);
 
         // block header
         READWRITE(this->nVersion);
