@@ -1,26 +1,26 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2020 The Bitcoin Core developers
+// Copyright (c) 2009-2016 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_INIT_H
 #define BITCOIN_INIT_H
 
-#include <memory>
 #include <string>
-#include <util/system.h>
 
-struct NodeContext;
-namespace boost {
+class CScheduler;
+class CWallet;
+
+namespace boost
+{
 class thread_group;
 } // namespace boost
-namespace util {
-class Ref;
-} // namespace util
 
+void StartShutdown();
+bool ShutdownRequested();
 /** Interrupt threads */
-void Interrupt(NodeContext& node);
-void Shutdown(NodeContext& node);
+void Interrupt(boost::thread_group& threadGroup);
+void Shutdown();
 //!Initialize the logging infrastructure
 void InitLogging();
 //!Parameter interaction: change current parameters depending on various rules
@@ -54,13 +54,16 @@ bool AppInitLockDataDirectory();
  * @note This should only be done after daemonization. Call Shutdown() if this function fails.
  * @pre Parameters should be parsed and config file should be read, AppInitLockDataDirectory should have been called.
  */
-bool AppInitMain(const util::Ref& context, NodeContext& node);
+bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler);
 
-/**
- * Register all arguments with the ArgsManager
- */
-void SetupServerArgs(NodeContext& node);
+/** The help message mode determines what help message to show */
+enum HelpMessageMode {
+    HMM_BITCOIND,
+    HMM_BITCOIN_QT
+};
 
+/** Help for options shared between UI and daemon (for -help) */
+std::string HelpMessage(HelpMessageMode mode);
 /** Returns licensing information (for -version) */
 std::string LicenseInfo();
 

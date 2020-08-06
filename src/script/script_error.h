@@ -1,12 +1,10 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2016 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_SCRIPT_SCRIPT_ERROR_H
 #define BITCOIN_SCRIPT_SCRIPT_ERROR_H
-
-#include <string>
 
 typedef enum ScriptError_t
 {
@@ -65,16 +63,13 @@ typedef enum ScriptError_t
     SCRIPT_ERR_WITNESS_MALLEATED_P2SH,
     SCRIPT_ERR_WITNESS_UNEXPECTED,
     SCRIPT_ERR_WITNESS_PUBKEYTYPE,
-
-    /* Constant scriptCode */
-    SCRIPT_ERR_OP_CODESEPARATOR,
-    SCRIPT_ERR_SIG_FINDANDDELETE,
+    SCRIPT_ERR_CONTRACT,
 
     SCRIPT_ERR_ERROR_COUNT
 } ScriptError;
 
 #define SCRIPT_ERR_LAST SCRIPT_ERR_ERROR_COUNT
 
-std::string ScriptErrorString(const ScriptError error);
+const char* ScriptErrorString(const ScriptError error);
 
 #endif // BITCOIN_SCRIPT_SCRIPT_ERROR_H

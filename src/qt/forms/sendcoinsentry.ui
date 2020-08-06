@@ -17,6 +17,9 @@
    <bool>false</bool>
   </property>
   <widget class="QFrame" name="SendCoins">
+   <property name="toolTip">
+    <string>This is a normal payment.</string>
+   </property>
    <property name="frameShape">
     <enum>QFrame::NoFrame</enum>
    </property>
@@ -144,9 +147,6 @@
       <property name="toolTip">
        <string>Enter a label for this address to add it to the list of used addresses</string>
       </property>
-      <property name="placeholderText">
-       <string>Enter a label for this address to add it to the list of used addresses</string>
-      </property>
      </widget>
     </item>
     <item row="2" column="0">
@@ -163,13 +163,9 @@
      </widget>
     </item>
     <item row="2" column="1">
-     <layout class="QHBoxLayout" name="horizontalLayoutAmount" stretch="0,1,0">
+     <layout class="QHBoxLayout" name="horizontalLayoutAmount" stretch="0,1">
       <item>
-       <widget class="BitcoinAmountField" name="payAmount">
-         <property name="toolTip">
-          <string>The amount to send in the selected unit</string>
-         </property>
-       </widget>
+       <widget class="BitcoinAmountField" name="payAmount"/>
       </item>
       <item>
        <widget class="QCheckBox" name="checkboxSubtractFeeFromAmount">
@@ -178,13 +174,6 @@
         </property>
         <property name="text">
          <string>S&amp;ubtract fee from amount</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="useAvailableBalanceButton">
-        <property name="text">
-         <string>Use available balance</string>
         </property>
        </widget>
       </item>
@@ -1259,12 +1248,12 @@
   <customwidget>
    <class>QValidatedLineEdit</class>
    <extends>QLineEdit</extends>
-   <header>qt/qvalidatedlineedit.h</header>
+   <header>qvalidatedlineedit.h</header>
   </customwidget>
   <customwidget>
    <class>BitcoinAmountField</class>
    <extends>QLineEdit</extends>
-   <header>qt/bitcoinamountfield.h</header>
+   <header>bitcoinamountfield.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>

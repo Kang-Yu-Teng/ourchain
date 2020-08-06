@@ -98,12 +98,6 @@
     </message>
 </context>
 <context>
-    <name>CreateWalletActivity</name>
-    </context>
-<context>
-    <name>CreateWalletDialog</name>
-    </context>
-<context>
     <name>EditAddressDialog</name>
     </context>
 <context>
@@ -136,12 +130,13 @@
         <source>URI:</source>
         <translation>URI:</translation>
     </message>
-</context>
-<context>
-    <name>OpenWalletActivity</name>
     </context>
 <context>
     <name>OptionsDialog</name>
+    <message>
+        <source>MB</source>
+        <translation>MB</translation>
+    </message>
     <message>
         <source>IPv4</source>
         <translation>IPv4</translation>
@@ -170,6 +165,9 @@
         <source>Amount</source>
         <translation>අගය</translation>
     </message>
+    </context>
+<context>
+    <name>QObject::QObject</name>
     </context>
 <context>
     <name>QRImageWidget</name>
@@ -237,10 +235,16 @@
     <name>SendCoinsEntry</name>
     </context>
 <context>
+    <name>SendConfirmationDialog</name>
+    </context>
+<context>
     <name>ShutdownWindow</name>
     </context>
 <context>
     <name>SignVerifyMessageDialog</name>
+    </context>
+<context>
+    <name>SplashScreen</name>
     </context>
 <context>
     <name>TrafficGraphWidget</name>
@@ -293,9 +297,6 @@
     <name>UnitDisplayStatusBarControl</name>
     </context>
 <context>
-    <name>WalletController</name>
-    </context>
-<context>
     <name>WalletFrame</name>
     </context>
 <context>
@@ -306,5 +307,13 @@
     </context>
 <context>
     <name>bitcoin-core</name>
+    <message>
+        <source>Information</source>
+        <translation>තොරතුර</translation>
+    </message>
+    <message>
+        <source>Warning</source>
+        <translation>අවවාදය</translation>
+    </message>
     </context>
 </TS>

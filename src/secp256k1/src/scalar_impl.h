@@ -4,11 +4,11 @@
  * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
  **********************************************************************/
 
-#ifndef SECP256K1_SCALAR_IMPL_H
-#define SECP256K1_SCALAR_IMPL_H
+#ifndef _SECP256K1_SCALAR_IMPL_H_
+#define _SECP256K1_SCALAR_IMPL_H_
 
+#include "group.h"
 #include "scalar.h"
-#include "util.h"
 
 #if defined HAVE_CONFIG_H
 #include "libsecp256k1-config.h"
@@ -23,9 +23,6 @@
 #else
 #error "Please select scalar implementation"
 #endif
-
-static const secp256k1_scalar secp256k1_scalar_one = SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 1);
-static const secp256k1_scalar secp256k1_scalar_zero = SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0);
 
 #ifndef USE_NUM_NONE
 static void secp256k1_scalar_get_num(secp256k1_num *r, const secp256k1_scalar *a) {
@@ -54,12 +51,6 @@ static void secp256k1_scalar_order_get_num(secp256k1_num *r) {
     secp256k1_num_set_bin(r, order, 32);
 }
 #endif
-
-static int secp256k1_scalar_set_b32_seckey(secp256k1_scalar *r, const unsigned char *bin) {
-    int overflow;
-    secp256k1_scalar_set_b32(r, bin, &overflow);
-    return (!overflow) & (!secp256k1_scalar_is_zero(r));
-}
 
 static void secp256k1_scalar_inverse(secp256k1_scalar *r, const secp256k1_scalar *x) {
 #if defined(EXHAUSTIVE_TEST_ORDER)
@@ -339,4 +330,4 @@ static void secp256k1_scalar_split_lambda(secp256k1_scalar *r1, secp256k1_scalar
 #endif
 #endif
 
-#endif /* SECP256K1_SCALAR_IMPL_H */
+#endif

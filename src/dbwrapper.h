@@ -1,27 +1,31 @@
-// Copyright (c) 2012-2019 The Bitcoin Core developers
+// Copyright (c) 2012-2016 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_DBWRAPPER_H
 #define BITCOIN_DBWRAPPER_H
 
-#include <clientversion.h>
-#include <fs.h>
-#include <serialize.h>
-#include <streams.h>
-#include <util/system.h>
-#include <util/strencodings.h>
+#include "clientversion.h"
+#include "fs.h"
+#include "serialize.h"
+#include "streams.h"
+#include "util.h"
+#include "utilstrencodings.h"
+#include "version.h"
 
 #include <leveldb/db.h>
 #include <leveldb/write_batch.h>
 
+#include<stdio.h>
+#include "support/allocators/zeroafterfree.h"
+#include "serialize.h"
 static const size_t DBWRAPPER_PREALLOC_KEY_SIZE = 64;
 static const size_t DBWRAPPER_PREALLOC_VALUE_SIZE = 1024;
 
 class dbwrapper_error : public std::runtime_error
 {
 public:
-    explicit dbwrapper_error(const std::string& msg) : std::runtime_error(msg) {}
+    dbwrapper_error(const std::string& msg) : std::runtime_error(msg) {}
 };
 
 class CDBWrapper;
@@ -60,7 +64,7 @@ public:
     /**
      * @param[in] _parent   CDBWrapper that this batch is to be submitted to
      */
-    explicit CDBBatch(const CDBWrapper &_parent) : parent(_parent), ssKey(SER_DISK, CLIENT_VERSION), ssValue(SER_DISK, CLIENT_VERSION), size_estimate(0) { };
+    CDBBatch(const CDBWrapper &_parent) : parent(_parent), ssKey(SER_DISK, CLIENT_VERSION), ssValue(SER_DISK, CLIENT_VERSION), size_estimate(0) { };
 
     void Clear()
     {
@@ -129,7 +133,7 @@ public:
         parent(_parent), piter(_piter) { };
     ~CDBIterator();
 
-    bool Valid() const;
+    bool Valid();
 
     void SeekToFirst();
 
@@ -197,9 +201,6 @@ private:
     //! the database itself
     leveldb::DB* pdb;
 
-    //! the name of this database
-    std::string m_name;
-
     //! a key used for optional XOR-obfuscation of the database
     std::vector<unsigned char> obfuscate_key;
 
@@ -222,9 +223,6 @@ public:
      */
     CDBWrapper(const fs::path& path, size_t nCacheSize, bool fMemory = false, bool fWipe = false, bool obfuscate = false);
     ~CDBWrapper();
-
-    CDBWrapper(const CDBWrapper&) = delete;
-    CDBWrapper& operator=(const CDBWrapper&) = delete;
 
     template <typename K, typename V>
     bool Read(const K& key, V& value) const
@@ -289,8 +287,17 @@ public:
 
     bool WriteBatch(CDBBatch& batch, bool fSync = false);
 
-    // Get an estimate of LevelDB memory usage (in bytes).
-    size_t DynamicMemoryUsage() const;
+    // not available for LevelDB; provide for compatibility with BDB
+    bool Flush()
+    {
+        return true;
+    }
+
+    bool Sync()
+    {
+        CDBBatch batch(*this);
+        return WriteBatch(batch, true);
+    }
 
     CDBIterator *NewIterator()
     {

@@ -1,13 +1,11 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2020 The Bitcoin Core developers
+// Copyright (c) 2009-2016 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <script/script_error.h>
+#include "script_error.h"
 
-#include <string>
-
-std::string ScriptErrorString(const ScriptError serror)
+const char* ScriptErrorString(const ScriptError serror)
 {
     switch (serror)
     {
@@ -60,7 +58,7 @@ std::string ScriptErrorString(const ScriptError serror)
         case SCRIPT_ERR_MINIMALDATA:
             return "Data push larger than necessary";
         case SCRIPT_ERR_SIG_PUSHONLY:
-            return "Only push operators allowed in signatures";
+            return "Only non-push operators allowed in signatures";
         case SCRIPT_ERR_SIG_HIGH_S:
             return "Non-canonical signature: S value is unnecessarily high";
         case SCRIPT_ERR_SIG_NULLDUMMY:
@@ -75,8 +73,6 @@ std::string ScriptErrorString(const ScriptError serror)
             return "Witness version reserved for soft-fork upgrades";
         case SCRIPT_ERR_PUBKEYTYPE:
             return "Public key is neither compressed or uncompressed";
-        case SCRIPT_ERR_CLEANSTACK:
-            return "Extra items left on stack after execution";
         case SCRIPT_ERR_WITNESS_PROGRAM_WRONG_LENGTH:
             return "Witness program has incorrect length";
         case SCRIPT_ERR_WITNESS_PROGRAM_WITNESS_EMPTY:
@@ -91,10 +87,8 @@ std::string ScriptErrorString(const ScriptError serror)
             return "Witness provided for non-witness script";
         case SCRIPT_ERR_WITNESS_PUBKEYTYPE:
             return "Using non-compressed keys in segwit";
-        case SCRIPT_ERR_OP_CODESEPARATOR:
-            return "Using OP_CODESEPARATOR in non-witness script";
-        case SCRIPT_ERR_SIG_FINDANDDELETE:
-            return "Signature is found in scriptCode";
+        case SCRIPT_ERR_CONTRACT:
+            return "Can't spend contract's UTXO";
         case SCRIPT_ERR_UNKNOWN_ERROR:
         case SCRIPT_ERR_ERROR_COUNT:
         default: break;

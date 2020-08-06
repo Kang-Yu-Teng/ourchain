@@ -1,5 +1,6 @@
 # Linearize
-Construct a linear, no-fork, best version of the Bitcoin blockchain.
+Construct a linear, no-fork, best version of the Bitcoin blockchain. The scripts
+run using Python 3 but are compatible with Python 2.
 
 ## Step 1: Download hash list
 
@@ -45,7 +46,7 @@ linearize-hashes.py.
 (Default: `1000*1000*1000 bytes`)
 * `netmagic`: Network magic number.
 * `out_of_order_cache_sz`: If out-of-order blocks are being read, the block can
-be written to a cache so that the blockchain doesn't have to be sought again.
+be written to a cache so that the blockchain doesn't have to be seeked again.
 This option specifies the cache size. (Default: `100*1000*1000 bytes`)
 * `rev_hash_bytes`: If true, the block hash list written by linearize-hashes.py
 will be byte-reversed when read by linearize-data.py. See the linearize-hashes

@@ -7,19 +7,7 @@
     </message>
     <message>
         <source>Create a new address</source>
-        <translation>নতুন একটি ঠিকানা তৈরি করুন</translation>
-    </message>
-    <message>
-        <source>&amp;New</source>
-        <translation>নতুন</translation>
-    </message>
-    <message>
-        <source>&amp;Copy</source>
-        <translation>কপি/প্রতিলিপি</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation>কপি/প্রতিলিপি</translation>
+        <translation>undefined</translation>
     </message>
     </context>
 <context>
@@ -46,12 +34,6 @@
     <name>CoinControlDialog</name>
     </context>
 <context>
-    <name>CreateWalletActivity</name>
-    </context>
-<context>
-    <name>CreateWalletDialog</name>
-    </context>
-<context>
     <name>EditAddressDialog</name>
     </context>
 <context>
@@ -70,9 +52,6 @@
     <name>OpenURIDialog</name>
     </context>
 <context>
-    <name>OpenWalletActivity</name>
-    </context>
-<context>
     <name>OptionsDialog</name>
     </context>
 <context>
@@ -88,6 +67,9 @@
     <name>QObject</name>
     </context>
 <context>
+    <name>QObject::QObject</name>
+    </context>
+<context>
     <name>QRImageWidget</name>
     </context>
 <context>
@@ -98,10 +80,6 @@
     </context>
 <context>
     <name>ReceiveRequestDialog</name>
-    <message>
-        <source>QR Code</source>
-        <translation>QR কোড</translation>
-    </message>
     <message>
         <source>Address</source>
         <translation>ঠিকানা </translation>
@@ -117,6 +95,9 @@
     <name>SendCoinsEntry</name>
     </context>
 <context>
+    <name>SendConfirmationDialog</name>
+    </context>
+<context>
     <name>ShutdownWindow</name>
     </context>
 <context>
@@ -129,6 +110,9 @@
         <source>Please check the signature and try again.</source>
         <translation>অনুগ্রহ করে স্বাক্ষরটি পুনরায় পরীক্ষা করে আবারও চেষ্টা করুন।</translation>
     </message>
+    </context>
+<context>
+    <name>SplashScreen</name>
     </context>
 <context>
     <name>TrafficGraphWidget</name>
@@ -153,9 +137,6 @@
     <name>UnitDisplayStatusBarControl</name>
     </context>
 <context>
-    <name>WalletController</name>
-    </context>
-<context>
     <name>WalletFrame</name>
     </context>
 <context>
@@ -167,8 +148,20 @@
 <context>
     <name>bitcoin-core</name>
     <message>
+        <source>Block creation options:</source>
+        <translation>ব্লক তৈরির অপশনগুলো:</translation>
+    </message>
+    <message>
+        <source>Debugging/Testing options:</source>
+        <translation>ডিবাগিং/টেস্টিং অপশন:</translation>
+    </message>
+    <message>
         <source>Do you want to rebuild the block database now?</source>
         <translation>আপনি কি পুনরায় ব্লক ডাটাবেইজ এখনই তৈরি করতে চান?</translation>
+    </message>
+    <message>
+        <source>RPC server options:</source>
+        <translation>আরপিসি সার্ভার অপশন:</translation>
     </message>
     <message>
         <source>This is experimental software.</source>
@@ -181,6 +174,14 @@
     <message>
         <source>Transaction too large</source>
         <translation>লেনদেনর অংক অনেক বড়</translation>
+    </message>
+    <message>
+        <source>Warning</source>
+        <translation>সতর্কতা</translation>
+    </message>
+    <message>
+        <source>Loading addresses...</source>
+        <translation>ঠিকানাগুলো লোডিং হচ্ছে...</translation>
     </message>
     </context>
 </TS>

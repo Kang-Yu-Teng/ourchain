@@ -1,13 +1,12 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2019 The Bitcoin Core developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <chainparamsbase.h>
+#include "chainparamsbase.h"
 
-#include <tinyformat.h>
-#include <util/system.h>
-#include <util/memory.h>
+#include "tinyformat.h"
+#include "util.h"
 
 #include <assert.h>
 
@@ -15,15 +14,53 @@ const std::string CBaseChainParams::MAIN = "main";
 const std::string CBaseChainParams::TESTNET = "test";
 const std::string CBaseChainParams::REGTEST = "regtest";
 
-void SetupChainParamsBaseOptions(ArgsManager& argsman)
+void AppendParamsHelpMessages(std::string& strUsage, bool debugHelp)
 {
-    argsman.AddArg("-chain=<chain>", "Use the chain <chain> (default: main). Allowed values: main, test, regtest", ArgsManager::ALLOW_ANY, OptionsCategory::CHAINPARAMS);
-    argsman.AddArg("-regtest", "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
-                 "This is intended for regression testing tools and app development. Equivalent to -chain=regtest.", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::CHAINPARAMS);
-    argsman.AddArg("-segwitheight=<n>", "Set the activation height of segwit. -1 to disable. (regtest-only)", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::DEBUG_TEST);
-    argsman.AddArg("-testnet", "Use the test chain. Equivalent to -chain=test.", ArgsManager::ALLOW_ANY, OptionsCategory::CHAINPARAMS);
-    argsman.AddArg("-vbparams=deployment:start:end", "Use given start/end times for specified version bits deployment (regtest-only)", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::CHAINPARAMS);
+    strUsage += HelpMessageGroup(_("Chain selection options:"));
+    strUsage += HelpMessageOpt("-testnet", _("Use the test chain"));
+    if (debugHelp) {
+        strUsage += HelpMessageOpt("-regtest", "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
+                                   "This is intended for regression testing tools and app development.");
+    }
 }
+
+/**
+ * Main network
+ */
+class CBaseMainParams : public CBaseChainParams
+{
+public:
+    CBaseMainParams()
+    {
+        nRPCPort = 8332;
+    }
+};
+
+/**
+ * Testnet (v3)
+ */
+class CBaseTestNetParams : public CBaseChainParams
+{
+public:
+    CBaseTestNetParams()
+    {
+        nRPCPort = 18332;
+        strDataDir = "testnet3";
+    }
+};
+
+/*
+ * Regression test
+ */
+class CBaseRegTestParams : public CBaseChainParams
+{
+public:
+    CBaseRegTestParams()
+    {
+        nRPCPort = 18332;
+        strDataDir = "regtest";
+    }
+};
 
 static std::unique_ptr<CBaseChainParams> globalChainBaseParams;
 
@@ -36,11 +73,11 @@ const CBaseChainParams& BaseParams()
 std::unique_ptr<CBaseChainParams> CreateBaseChainParams(const std::string& chain)
 {
     if (chain == CBaseChainParams::MAIN)
-        return MakeUnique<CBaseChainParams>("", 8332);
+        return std::unique_ptr<CBaseChainParams>(new CBaseMainParams());
     else if (chain == CBaseChainParams::TESTNET)
-        return MakeUnique<CBaseChainParams>("testnet3", 18332);
+        return std::unique_ptr<CBaseChainParams>(new CBaseTestNetParams());
     else if (chain == CBaseChainParams::REGTEST)
-        return MakeUnique<CBaseChainParams>("regtest", 18443);
+        return std::unique_ptr<CBaseChainParams>(new CBaseRegTestParams());
     else
         throw std::runtime_error(strprintf("%s: Unknown chain %s.", __func__, chain));
 }
@@ -48,5 +85,18 @@ std::unique_ptr<CBaseChainParams> CreateBaseChainParams(const std::string& chain
 void SelectBaseParams(const std::string& chain)
 {
     globalChainBaseParams = CreateBaseChainParams(chain);
-    gArgs.SelectConfigNetwork(chain);
+}
+
+std::string ChainNameFromCommandLine()
+{
+    bool fRegTest = gArgs.GetBoolArg("-regtest", false);
+    bool fTestNet = gArgs.GetBoolArg("-testnet", false);
+
+    if (fTestNet && fRegTest)
+        throw std::runtime_error("Invalid combination of -regtest and -testnet.");
+    if (fRegTest)
+        return CBaseChainParams::REGTEST;
+    if (fTestNet)
+        return CBaseChainParams::TESTNET;
+    return CBaseChainParams::MAIN;
 }
