@@ -33,13 +33,13 @@ bool operator==(const Coin &a, const Coin &b) {
 class CCoinsViewTest : public CCoinsView
 {
     uint256 hashBestBlock_;
-    std::map<COutPoint, Coin> coinMap_;
-    std::map<uint256, ContState> contMap_;
+    std::map<COutPoint, Coin> map_;
+
 public:
     bool GetCoin(const COutPoint& outpoint, Coin& coin) const override
     {
-	std::map<COutPoint, Coin>::const_iterator it = coinMap_.find(outpoint);
-        if (it == coinMap_.end()) {
+        std::map<COutPoint, Coin>::const_iterator it = map_.find(outpoint);
+        if (it == map_.end()) {
             return false;
         }
         coin = it->second;
@@ -52,22 +52,18 @@ public:
 
     uint256 GetBestBlock() const override { return hashBestBlock_; }
 
-    bool BatchWrite(CCoinsMap& mapCoins, CContStateMap& mapContState, const uint256& hashBlock) override
+    bool BatchWrite(CCoinsMap& mapCoins, const uint256& hashBlock) override
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
             if (it->second.flags & CCoinsCacheEntry::DIRTY) {
                 // Same optimization used in CCoinsViewDB is to only write dirty entries.
-                coinMap_[it->first] = it->second.coin;
+                map_[it->first] = it->second.coin;
                 if (it->second.coin.IsSpent() && InsecureRandRange(3) == 0) {
                     // Randomly delete empty entries on write.
-                    coinMap_.erase(it->first);
+                    map_.erase(it->first);
                 }
             }
             mapCoins.erase(it++);
-        }
-	for (CContStateMap::iterator it = mapContState.begin(); it != mapContState.end(); ) {
-            contMap_[it->first] = it->second.cs;
-            mapContState.erase(it++);
         }
         if (!hashBlock.IsNull())
             hashBestBlock_ = hashBlock;
@@ -590,10 +586,9 @@ void GetCoinsMapEntry(const CCoinsMap& map, CAmount& value, char& flags)
 
 void WriteCoinsViewEntry(CCoinsView& view, CAmount value, char flags)
 {
-    CCoinsMap coinMap;
-    CContStateMap contMap;
-    InsertCoinsMapEntry(coinMap, value, flags);
-    view.BatchWrite(coinMap, contMap, {});
+    CCoinsMap map;
+    InsertCoinsMapEntry(map, value, flags);
+    view.BatchWrite(map, {});
 }
 
 class SingleEntryCacheTest

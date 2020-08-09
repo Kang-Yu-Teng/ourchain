@@ -9,6 +9,7 @@
 #include "primitives/transaction.h"
 #include "serialize.h"
 #include "uint256.h"
+
 /** Nodes collect new transactions into a block, hash them into a hash tree,
  * and scan through nonce values to make the block's hash satisfy proof-of-work
  * requirements.  When they solve the proof-of-work, they broadcast the block
@@ -23,16 +24,9 @@ public:
     int32_t nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
-    uint256 hashContractState;
     uint32_t nTime;
     uint32_t nBits;
     uint32_t nNonce;
-    uint32_t nTimeNonce;
-    uint256 maxhash;
-    uint256  hashMerkleRoot2;        //2nd merkle root hash (future implementation, Steven's EPoW)
-    uint32_t nNonce2;               //2nd nonce for the 2nd PoW (cf. Steven's EPoW)
-    uint32_t nTimeNonce2;
-    uint256 maxhash2;
 
     CBlockHeader()
     {
@@ -46,16 +40,9 @@ public:
         READWRITE(this->nVersion);
         READWRITE(hashPrevBlock);
         READWRITE(hashMerkleRoot);
-        READWRITE(hashContractState);
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
-	READWRITE(nTimeNonce);
-        READWRITE(maxhash);
-        READWRITE(nTimeNonce2);
-        READWRITE(maxhash2);
-        READWRITE(hashMerkleRoot2);
-        READWRITE(nNonce2);
     }
 
     void SetNull()
@@ -63,17 +50,9 @@ public:
         nVersion = 0;
         hashPrevBlock.SetNull();
         hashMerkleRoot.SetNull();
-        hashContractState.SetNull();
         nTime = 0;
         nBits = 0;
         nNonce = 0;
-	nTimeNonce = 0;
-        maxhash.SetNull();
-        nTimeNonce2 = 0;
-        maxhash2.SetNull();
-        hashMerkleRoot2.SetNull();
-        nNonce2 = 0;
-//b04902091
     }
 
     bool IsNull() const
@@ -82,8 +61,6 @@ public:
     }
 
     uint256 GetHash() const;
-    uint256 GetHash2() const;
-    //b04902091
 
     int64_t GetBlockTime() const
     {
@@ -97,9 +74,6 @@ class CBlock : public CBlockHeader
 public:
     // network and disk
     std::vector<CTransactionRef> vtx;
-
-    // memory only
-    mutable std::vector<CTransactionRef> vvtx;
 
     // memory only
     mutable bool fChecked;
@@ -136,17 +110,9 @@ public:
         block.nVersion       = nVersion;
         block.hashPrevBlock  = hashPrevBlock;
         block.hashMerkleRoot = hashMerkleRoot;
-        block.hashContractState = hashContractState;
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
-        block.nTimeNonce = nTimeNonce;
-        block.maxhash = maxhash;
-        block.nTimeNonce2 = nTimeNonce2;
-        block.maxhash2 = maxhash2;
-        block.hashMerkleRoot2   = hashMerkleRoot2;
-        block.nNonce2           = nNonce2;
-//b04902091
         return block;
     }
 
