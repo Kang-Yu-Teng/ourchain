@@ -14,6 +14,7 @@
 
 #include <vector>
 
+
 /**
  * Maximum amount of time that a block timestamp is allowed to exceed the
  * current network-adjusted time before the block will be accepted.
@@ -206,12 +207,23 @@ public:
     //! Verification status of this block. See enum BlockStatus
     unsigned int nStatus;
 
+    //! (memory only)The time at which this block is received from the network
+    uint32_t nArrivalTime;
+
     //! block header
     int nVersion;
     uint256 hashMerkleRoot;
+    uint256 hashContractState;
     unsigned int nTime;
     unsigned int nBits;
     unsigned int nNonce;
+    uint32_t nTimeNonce;
+    uint256 maxhash;
+    uint256  hashMerkleRoot2;        //2nd merkle root hash (future implementation, Steven's EPoW)
+    uint32_t nNonce2;               //2nd nonce for the 2nd PoW (cf. Steven's EPoW)
+    uint32_t nTimeNonce2;
+    uint256 maxhash2;
+//b04902091
 
     //! (memory only) Sequential id assigned to distinguish order in which blocks are received.
     int32_t nSequenceId;
@@ -234,12 +246,21 @@ public:
         nStatus = 0;
         nSequenceId = 0;
         nTimeMax = 0;
+        nArrivalTime = 0;
 
         nVersion       = 0;
         hashMerkleRoot = uint256();
+        hashContractState = uint256();
         nTime          = 0;
         nBits          = 0;
         nNonce         = 0;
+        nTimeNonce = 0;
+        maxhash = uint256();
+        nTimeNonce2 = 0;
+        maxhash2 = uint256();
+        hashMerkleRoot2 = uint256();
+        nNonce2 = 0;
+//b04902091
     }
 
     CBlockIndex()
@@ -253,9 +274,17 @@ public:
 
         nVersion       = block.nVersion;
         hashMerkleRoot = block.hashMerkleRoot;
+        hashContractState = block.hashContractState;
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
+        nTimeNonce     = block.nTimeNonce;
+        maxhash        = block.maxhash;
+        hashMerkleRoot2= block.hashMerkleRoot2;
+        nNonce2        = block.nNonce2;
+        nTimeNonce2    = block.nTimeNonce2;
+        maxhash2       = block.maxhash2;
+//b04902091
     }
 
     CDiskBlockPos GetBlockPos() const {
@@ -276,16 +305,29 @@ public:
         return ret;
     }
 
+    int64_t GetArrivalTime() const
+    {
+        return (int64_t)nArrivalTime;
+    }
+
     CBlockHeader GetBlockHeader() const
     {
         CBlockHeader block;
         block.nVersion       = nVersion;
         if (pprev)
             block.hashPrevBlock = pprev->GetBlockHash();
-        block.hashMerkleRoot = hashMerkleRoot;
+        block.hashMerkleRoot = hashMerkleRoot;	
+        block.hashContractState = hashContractState;
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
+        block.nTimeNonce            = nTimeNonce;
+        block.maxhash               = maxhash;
+        block.nTimeNonce2           = nTimeNonce2;
+        block.maxhash2              = maxhash2;
+        block.hashMerkleRoot2       = hashMerkleRoot2;
+        block.nNonce2               = nNonce2;
+//b04902091
         return block;
     }
 
@@ -298,6 +340,12 @@ public:
     {
         return (int64_t)nTime;
     }
+
+    int64_t GetBlockFinishTime() const
+    {
+        return (int64_t)nTimeNonce;
+    }
+//b04902091
 
     int64_t GetBlockTimeMax() const
     {
@@ -322,9 +370,10 @@ public:
 
     std::string ToString() const
     {
-        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
+        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, contract=%s, hashBlock=%s)",
             pprev, nHeight,
             hashMerkleRoot.ToString(),
+            hashContractState.ToString(),
             GetBlockHash().ToString());
     }
 
@@ -402,9 +451,17 @@ public:
         READWRITE(this->nVersion);
         READWRITE(hashPrev);
         READWRITE(hashMerkleRoot);
+        READWRITE(hashContractState);
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
+	READWRITE(nTimeNonce);
+        READWRITE(maxhash);
+        READWRITE(nTimeNonce2);
+        READWRITE(maxhash2);
+        READWRITE(hashMerkleRoot2);
+        READWRITE(nNonce2);
+//b04902091
     }
 
     uint256 GetBlockHash() const
@@ -412,10 +469,17 @@ public:
         CBlockHeader block;
         block.nVersion        = nVersion;
         block.hashPrevBlock   = hashPrev;
+        block.hashContractState = hashContractState;
         block.hashMerkleRoot  = hashMerkleRoot;
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;
+        block.nTimeNonce      = nTimeNonce;
+        block.maxhash         = maxhash;
+        block.nTimeNonce2     = nTimeNonce2;
+        block.maxhash2        = maxhash2;
+        block.hashMerkleRoot2 = hashMerkleRoot2;
+        block.nNonce2         = nNonce2;
         return block.GetHash();
     }
 
